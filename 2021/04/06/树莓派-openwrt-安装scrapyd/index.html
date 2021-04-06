@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="买了树莓派之后刷了openwrt当个旁路由后就闲置了，之前安了mysql想挂点东西，docker镜像拉下来才发现里面的jdk在arm下跑不起来，直接装在主机环境忒麻烦了，直接放弃。 之前为了装docker-compose安了python，现在又想写点爬虫挂在上面，于是又安了scrapyd。 安装问题这里记录一下安装中的波折，要安装直接看下面总结 python的模块安装相当简单，直接上pip： 12">
+<meta property="og:type" content="article">
+<meta property="og:title" content="树莓派(openwrt)安装scrapyd">
+<meta property="og:url" content="http://mozzit.github.io/2021/04/06/%E6%A0%91%E8%8E%93%E6%B4%BE-openwrt-%E5%AE%89%E8%A3%85scrapyd/index.html">
+<meta property="og:site_name" content="Mozzit">
+<meta property="og:description" content="买了树莓派之后刷了openwrt当个旁路由后就闲置了，之前安了mysql想挂点东西，docker镜像拉下来才发现里面的jdk在arm下跑不起来，直接装在主机环境忒麻烦了，直接放弃。 之前为了装docker-compose安了python，现在又想写点爬虫挂在上面，于是又安了scrapyd。 安装问题这里记录一下安装中的波折，要安装直接看下面总结 python的模块安装相当简单，直接上pip： 12">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-04-06T15:16:17.000Z">
+<meta property="article:modified_time" content="2021-04-06T16:53:12.693Z">
+<meta property="article:author" content="Mozzit">
+<meta name="twitter:card" content="summary">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="https://www.gravatar.com/avatar/f92ec42d58ea7b80a47de130553bcfaf?s=16">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="https://www.gravatar.com/avatar/f92ec42d58ea7b80a47de130553bcfaf?s=192" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="https://www.gravatar.com/avatar/f92ec42d58ea7b80a47de130553bcfaf?s=180">
+          
+        
+    
+    <!-- title -->
+    <title>树莓派(openwrt)安装scrapyd</title>
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+      
+<link rel="stylesheet" href="/css/rtl.css">
+
+    
+    <!-- rss -->
+    
+    
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/archives/">归档</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" href="/2021/03/14/openwrt%E5%AE%89%E8%A3%85mysql/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://mozzit.github.io/2021/04/06/%E6%A0%91%E8%8E%93%E6%B4%BE-openwrt-%E5%AE%89%E8%A3%85scrapyd/" target="_blank" rel="noopener"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://mozzit.github.io/2021/04/06/%E6%A0%91%E8%8E%93%E6%B4%BE-openwrt-%E5%AE%89%E8%A3%85scrapyd/&text=树莓派(openwrt)安装scrapyd" target="_blank" rel="noopener"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://mozzit.github.io/2021/04/06/%E6%A0%91%E8%8E%93%E6%B4%BE-openwrt-%E5%AE%89%E8%A3%85scrapyd/&title=树莓派(openwrt)安装scrapyd" target="_blank" rel="noopener"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://mozzit.github.io/2021/04/06/%E6%A0%91%E8%8E%93%E6%B4%BE-openwrt-%E5%AE%89%E8%A3%85scrapyd/&is_video=false&description=树莓派(openwrt)安装scrapyd" target="_blank" rel="noopener"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=树莓派(openwrt)安装scrapyd&body=Check out this article: http://mozzit.github.io/2021/04/06/%E6%A0%91%E8%8E%93%E6%B4%BE-openwrt-%E5%AE%89%E8%A3%85scrapyd/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://mozzit.github.io/2021/04/06/%E6%A0%91%E8%8E%93%E6%B4%BE-openwrt-%E5%AE%89%E8%A3%85scrapyd/&title=树莓派(openwrt)安装scrapyd" target="_blank" rel="noopener"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://mozzit.github.io/2021/04/06/%E6%A0%91%E8%8E%93%E6%B4%BE-openwrt-%E5%AE%89%E8%A3%85scrapyd/&title=树莓派(openwrt)安装scrapyd" target="_blank" rel="noopener"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://mozzit.github.io/2021/04/06/%E6%A0%91%E8%8E%93%E6%B4%BE-openwrt-%E5%AE%89%E8%A3%85scrapyd/&title=树莓派(openwrt)安装scrapyd" target="_blank" rel="noopener"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://mozzit.github.io/2021/04/06/%E6%A0%91%E8%8E%93%E6%B4%BE-openwrt-%E5%AE%89%E8%A3%85scrapyd/&title=树莓派(openwrt)安装scrapyd" target="_blank" rel="noopener"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://mozzit.github.io/2021/04/06/%E6%A0%91%E8%8E%93%E6%B4%BE-openwrt-%E5%AE%89%E8%A3%85scrapyd/&name=树莓派(openwrt)安装scrapyd&description=" target="_blank" rel="noopener"><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://news.ycombinator.com/submitlink?u=http://mozzit.github.io/2021/04/06/%E6%A0%91%E8%8E%93%E6%B4%BE-openwrt-%E5%AE%89%E8%A3%85scrapyd/&t=树莓派(openwrt)安装scrapyd" target="_blank" rel="noopener"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#安装"><span class="toc-number">1.</span> <span class="toc-text">安装</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#问题"><span class="toc-number">1.1.</span> <span class="toc-text">问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#安装-python3-lxml"><span class="toc-number">1.2.</span> <span class="toc-text">安装 python3-lxml</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#总结"><span class="toc-number">1.3.</span> <span class="toc-text">总结</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#启动"><span class="toc-number">2.</span> <span class="toc-text">启动</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index py4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        树莓派(openwrt)安装scrapyd
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">Mozzit</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2021-04-06T15:16:17.000Z" itemprop="datePublished">2021-04-06</time>
+        
+      
+    </div>
+
+
+      
+
+      
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p>买了树莓派之后刷了openwrt当个旁路由后就闲置了，之前安了mysql想挂点东西，docker镜像拉下来才发现里面的jdk在arm下跑不起来，直接装在主机环境忒麻烦了，直接放弃。</p>
+<p>之前为了装docker-compose安了python，现在又想写点爬虫挂在上面，于是又安了scrapyd。</p>
+<h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>这里记录一下安装中的波折，要安装直接看下面总结</p>
+<p>python的模块安装相当简单，直接上pip：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> pip install scrapyd -i https://pypi.tuna.tsinghua.edu.cn/simple/</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> -i及后面的参数是为了使用镜像源</span></span><br></pre></td></tr></table></figure>
+
+<p>当然常见的系统没什么问题会直接安装成功，在我这里就有问题了，由于openwrt不自带gcc，所有pip安装过程中需要编译C语言库的操作都不支持，就会出现很多额外的问题，比如下面这种<code>Installing build dependencies ... error</code>，我这个版本的pip会尝试一直安装更低版本的依赖知道成功或者不符合依赖版本要求</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> pip install scrapyd -i https://pypi.tuna.tsinghua.edu.cn/simple/</span></span><br><span class="line">...</span><br><span class="line">Collecting cryptography&gt;=2.0</span><br><span class="line">  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/9b/77/461087a514d2e8ece1c975d8216bc03f7048e6090c5166bc34115afdaa53/cryptography-3.4.7.tar.gz (546 kB)</span><br><span class="line">     |████████████████████████████████| 546 kB 1.7 MB/s</span><br><span class="line">  Installing build dependencies ... error</span><br><span class="line">WARNING: Discarding https://pypi.tuna.tsinghua.edu.cn/packages/9b/77/461087a514d2e8ece1c975d8216bc03f7048e6090c5166bc34115afdaa53/cryptography-3.4.7.tar.gz#sha256=3d10de8116d25649631977cb37da6cbdd2d6fa0e0281d014a5b7d337255ca713 (from https://pypi.tuna.tsinghua.edu.cn/simple/cryptography/) (requires-python:&gt;=3.6). Command errored out with exit status 1: /usr/bin/python3 /usr/lib/python3.9/site-packages/pip install --ignore-installed --no-user --prefix /tmp/pip-build-env-qbe888b7/overlay --no-warn-script-location -v --no-binary :none: --only-binary :none: -i https://pypi.tuna.tsinghua.edu.cn/simple/ -- 'setuptools&gt;=40.6.0' wheel 'cffi&gt;=1.12; platform_python_implementation != '"'"'PyPy'"'"'' 'setuptools-rust&gt;=0.11.4' Check the logs for full command output.</span><br><span class="line">  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/fa/2d/2154d8cb773064570f48ec0b60258a4522490fcb115a6c7c9423482ca993/cryptography-3.4.6.tar.gz (546 kB)</span><br><span class="line">     |████████████████████████████████| 546 kB 2.5 MB/s</span><br><span class="line">  Installing build dependencies ... error</span><br></pre></td></tr></table></figure>
+
+<p>当然一直等下去很难成功，直接<code>Ctrl+C</code>结束掉，然后去找一遍有没有编译好的软件包</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> opkg update</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> opkg list | grep cryptography</span></span><br><span class="line">python3-cryptography - 3.3.2-1 - cryptography is a package which provides cryptographic recipes and primitives to Python developers.  Our goal is for it to be your "cryptographic standard library". It supports Python 2.6-2.7, Python 3.3+, and PyPy 2.6+.</span><br><span class="line">python3-cryptography-src - 3.3.2-1 - cryptography is a package which provides cryptographic recipes and primitives to Python developers.  Our goal is for it to be your "cryptographic standard library". It supports Python 2.6-2.7, Python 3.3+, and PyPy 2.6+.  This package contains the Python source files for python3-cryptography.</span><br></pre></td></tr></table></figure>
+
+<p>还真的找到了，直接一个<code>opkg install python3-cryptography</code>，然后继续上一步使用pip安装，出现问题依赖再重复此步骤</p>
+<h3 id="安装-python3-lxml"><a href="#安装-python3-lxml" class="headerlink" title="安装 python3-lxml"></a>安装 python3-lxml</h3><p>安装这个包时也出现了问题，这个包还有两个依赖包要安</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">opkg update</span><br><span class="line">opkg install libxml2 libxslt python3-lxml</span><br></pre></td></tr></table></figure>
+
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>一路下来，我只安装了以下这几个编译好的软件包和依赖，由于我原本环境已经安装了不少的已编译python模块，在全新环境上可能需要安装更多 的依赖</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">opkg update</span><br><span class="line">opkg install libxml2 libxslt python3-lxml python3-cryptography</span><br><span class="line">pip install scrapyd -i https://pypi.tuna.tsinghua.edu.cn/simple/</span><br></pre></td></tr></table></figure>
+
+<h2 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h2><p>安装完成迫不及待启动试试，然后又栽到一个坑里</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> scrapyd</span></span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File "/usr/bin/scrapyd", line 5, in &lt;module&gt;</span><br><span class="line">    from scrapyd.scripts.scrapyd_run import main</span><br><span class="line">  File "/usr/lib/python3.9/site-packages/scrapyd/__init__.py", line 6, in &lt;module&gt;</span><br><span class="line">    from scrapy.utils.misc import load_object</span><br><span class="line">  File "/usr/lib/python3.9/site-packages/scrapy/__init__.py", line 12, in &lt;module&gt;</span><br><span class="line">    from scrapy.spiders import Spider</span><br><span class="line">  File "/usr/lib/python3.9/site-packages/scrapy/spiders/__init__.py", line 11, in &lt;module&gt;</span><br><span class="line">    from scrapy.http import Request</span><br><span class="line">  File "/usr/lib/python3.9/site-packages/scrapy/http/__init__.py", line 11, in &lt;module&gt;</span><br><span class="line">    from scrapy.http.request.form import FormRequest</span><br><span class="line">  File "/usr/lib/python3.9/site-packages/scrapy/http/request/form.py", line 16, in &lt;module&gt;</span><br><span class="line">    from scrapy.utils.response import get_base_url</span><br><span class="line">  File "/usr/lib/python3.9/site-packages/scrapy/utils/response.py", line 7, in &lt;module&gt;</span><br><span class="line">    import webbrowser</span><br><span class="line">ModuleNotFoundError: No module named 'webbrowser'</span><br></pre></td></tr></table></figure>
+
+<p>webbrowser是python的内建模块，无需安装，但是我使用的这个版本的python没有这个模块，只好解决导入这个模块的文件了</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vim /usr/lib/python3.9/site-packages/scrapy/utils/response.py</span><br></pre></td></tr></table></figure>
+
+<p><code>/webbrowser</code>查找使用到webbrowser的地方，一共有两处，一个是<code>import webbrowser</code>,这个直接注释掉，另一个是一个函数的默认参数，这个直接复制一行注释，然后删除这个默认值</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">"""</span></span><br><span class="line"><span class="string">This module provides some useful functions for working with</span></span><br><span class="line"><span class="string">scrapy.http.Response objects</span></span><br><span class="line"><span class="string">"""</span></span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> weakref</span><br><span class="line"><span class="comment">#import webbrowser</span></span><br><span class="line"><span class="keyword">import</span> tempfile</span><br><span class="line"></span><br><span class="line">...很多行后...</span><br><span class="line"></span><br><span class="line"><span class="comment">#def open_in_browser(response, _openfunc=webbrowser.open):</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">open_in_browser</span><span class="params">(response, _openfunc)</span>:</span></span><br></pre></td></tr></table></figure>
+
+<p>然后再执行<code>scrapyd</code>，顺利启动了</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> scrapyd</span></span><br><span class="line">2021-04-05T22:06:09+0800 [-] Loading /usr/lib/python3.9/site-packages/scrapyd/txapp.py...</span><br><span class="line">2021-04-05T22:06:09+0800 [-] Scrapyd web console available at http://127.0.0.1:6800/</span><br><span class="line">2021-04-05T22:06:09+0800 [-] Loaded.</span><br><span class="line">2021-04-05T22:06:09+0800 [twisted.scripts._twistd_unix.UnixAppLogger#info] twistd 21.2.0 (/usr/bin/python3 3.9.2) starting up.</span><br><span class="line">2021-04-05T22:06:09+0800 [twisted.scripts._twistd_unix.UnixAppLogger#info] reactor class: twisted.internet.epollreactor.EPollReactor.</span><br><span class="line">2021-04-05T22:06:09+0800 [-] Site starting on 6800</span><br><span class="line">2021-04-05T22:06:09+0800 [twisted.web.server.Site#info] Starting factory &lt;twisted.web.server.Site object at 0x1424e710&gt;</span><br><span class="line">2021-04-05T22:06:09+0800 [Launcher] Scrapyd 1.2.1 started: max_proc=16, runner='scrapyd.runner'</span><br></pre></td></tr></table></figure>
+
+<p>当然这个时候还是没有办法直接访问端口，一是绑定的ip只有本机能访问，二是6800端口还没有在防火墙上放行</p>
+<p>先修改绑定ip地址配置，scrapyd文档中有写会尝试从多个地方读取配置，我这里用的是<code>/etc/scrapyd/scrapyd.conf</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mkdir /etc/scrapyd</span><br><span class="line">vim /etc/scrapyd/scrapyd.conf</span><br></pre></td></tr></table></figure>
+
+<p>然后输入以下内容，这里我只配置了 ip</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[scrapyd]</span></span><br><span class="line"><span class="attr">bind_address</span>=<span class="number">0.0</span>.<span class="number">0.0</span></span><br></pre></td></tr></table></figure>
+
+<p>最后在luci界面配置了防火墙放行规则，然后启动scrapyd，访问<code>192.168.2.2:6800</code>，就能看到管理页面了，注意把这里ip改成你自己的服务器。</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/archives/">归档</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#安装"><span class="toc-number">1.</span> <span class="toc-text">安装</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#问题"><span class="toc-number">1.1.</span> <span class="toc-text">问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#安装-python3-lxml"><span class="toc-number">1.2.</span> <span class="toc-text">安装 python3-lxml</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#总结"><span class="toc-number">1.3.</span> <span class="toc-text">总结</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#启动"><span class="toc-number">2.</span> <span class="toc-text">启动</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://mozzit.github.io/2021/04/06/%E6%A0%91%E8%8E%93%E6%B4%BE-openwrt-%E5%AE%89%E8%A3%85scrapyd/" target="_blank" rel="noopener"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=http://mozzit.github.io/2021/04/06/%E6%A0%91%E8%8E%93%E6%B4%BE-openwrt-%E5%AE%89%E8%A3%85scrapyd/&text=树莓派(openwrt)安装scrapyd" target="_blank" rel="noopener"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://mozzit.github.io/2021/04/06/%E6%A0%91%E8%8E%93%E6%B4%BE-openwrt-%E5%AE%89%E8%A3%85scrapyd/&title=树莓派(openwrt)安装scrapyd" target="_blank" rel="noopener"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://mozzit.github.io/2021/04/06/%E6%A0%91%E8%8E%93%E6%B4%BE-openwrt-%E5%AE%89%E8%A3%85scrapyd/&is_video=false&description=树莓派(openwrt)安装scrapyd" target="_blank" rel="noopener"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=树莓派(openwrt)安装scrapyd&body=Check out this article: http://mozzit.github.io/2021/04/06/%E6%A0%91%E8%8E%93%E6%B4%BE-openwrt-%E5%AE%89%E8%A3%85scrapyd/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=http://mozzit.github.io/2021/04/06/%E6%A0%91%E8%8E%93%E6%B4%BE-openwrt-%E5%AE%89%E8%A3%85scrapyd/&title=树莓派(openwrt)安装scrapyd" target="_blank" rel="noopener"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=http://mozzit.github.io/2021/04/06/%E6%A0%91%E8%8E%93%E6%B4%BE-openwrt-%E5%AE%89%E8%A3%85scrapyd/&title=树莓派(openwrt)安装scrapyd" target="_blank" rel="noopener"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://mozzit.github.io/2021/04/06/%E6%A0%91%E8%8E%93%E6%B4%BE-openwrt-%E5%AE%89%E8%A3%85scrapyd/&title=树莓派(openwrt)安装scrapyd" target="_blank" rel="noopener"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=http://mozzit.github.io/2021/04/06/%E6%A0%91%E8%8E%93%E6%B4%BE-openwrt-%E5%AE%89%E8%A3%85scrapyd/&title=树莓派(openwrt)安装scrapyd" target="_blank" rel="noopener"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://mozzit.github.io/2021/04/06/%E6%A0%91%E8%8E%93%E6%B4%BE-openwrt-%E5%AE%89%E8%A3%85scrapyd/&name=树莓派(openwrt)安装scrapyd&description=" target="_blank" rel="noopener"><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://news.ycombinator.com/submitlink?u=http://mozzit.github.io/2021/04/06/%E6%A0%91%E8%8E%93%E6%B4%BE-openwrt-%E5%AE%89%E8%A3%85scrapyd/&t=树莓派(openwrt)安装scrapyd" target="_blank" rel="noopener"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2021 Mozzit
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">首页</a></li>
+         
+          <li><a href="/about/">关于</a></li>
+         
+          <li><a href="/archives/">归档</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+
+<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
+
+
+    <!-- jquery -->
+
+<script src="/lib/jquery/jquery.min.js"></script>
+
+
+<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+
+<!-- clipboard -->
+
+  
+<script src="/lib/clipboard/clipboard.min.js"></script>
+
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板!\">";
+    btn += '<i class="far fa-clone"></i>';
+    btn += '</span>'; 
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Google Analytics -->
+
+<!-- Baidu Analytics -->
+
+<!-- Disqus Comments -->
+
+
+</body>
+</html>
