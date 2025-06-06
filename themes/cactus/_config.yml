@@ -167,7 +167,7 @@ utterances:
 # Fill in your twikoo data to enable twikoo comments
 twikoo:
   enabled: true
-  env_id: https://twikoo.mozzit.me
+  env_id: https://twikoo.mozzit.me/.netlify/functions/twikoo
 
 # Fill in your Google Analytics tracking ID to enable Google Analytics.
 google_analytics:
