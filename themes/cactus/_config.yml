@@ -30,6 +30,8 @@ social_links:
   -
     icon: github
     link: https://github.com/mozzit
+  - icon: rss
+    link: /atom.xml
 
 
 # Customize the overview with displaying a tagcloud on the index page.
